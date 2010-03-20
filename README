@@ -1,0 +1,26 @@
+HelenaORM is a simple ORM Mapping Tool for Apache Cassandra
+
+It is work in progress :).
+
+
+        final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
+                "localhost",
+                9160, 
+                "Keyspace1", SerializeUnknownClasses.YES );
+        
+        final PublicEvent exampleEvent = new PublicEvent();
+        exampleEvent.setName( "Session im Irish Rover" );
+        exampleEvent.setDescription( "Gute Irische Livemusik" );
+        exampleEvent.setId( UUID.randomUUID() );
+        exampleEvent.setUrl( URI.create( "http://www.thiesen.org" ) );
+        
+        final HelenaDAO<PublicEvent> dao = factory.forClassAndColumnFamily( PublicEvent.class, "Standard1" );
+        
+        dao.insert( exampleEvent );
+        
+        System.out.println( "Stored as " + exampleEvent.getId() );
+
+        final PublicEvent publicEvent = dao.get( exampleEvent.getId().toString() );
+        
+        System.out.println( publicEvent );
+        
