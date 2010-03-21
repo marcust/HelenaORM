@@ -34,7 +34,37 @@ import com.google.common.collect.ImmutableList;
 public class Main {
 
     public static void main( final String... args ) {
+        simpleExample();
+        superColumnExample();
+    }
+
+    private static void superColumnExample() {
+        final User admin = new User();
+        admin.setType( UserType.ADMINISTRATOR );
+        admin.setFirstname( "Emil" );
+        admin.setLastname("Admin");
+        admin.setUsername( "admin" );
         
+        final User normalUser = new User();
+        normalUser.setType( UserType.USER );
+        normalUser.setFirstname( "Joe" );
+        normalUser.setLastname( "Example" );
+        normalUser.setUsername( "joex20" );
+        
+        final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
+                "localhost",
+                9160, 
+                "Keyspace1", SerializeUnknownClasses.NO );
+        
+        
+        final HelenaDAO<User> userDAO = factory.forClassAndColumnFamily( User.class, "Super1" );
+        
+        userDAO.insert( admin );
+        userDAO.insert( normalUser );
+        
+    }
+
+    private static void simpleExample() {
         final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
                 "localhost",
                 9160, 
@@ -45,6 +75,7 @@ public class Main {
         exampleEvent.setDescription( "Gute Irische Livemusik" );
         exampleEvent.setId( UUID.randomUUID() );
         exampleEvent.setUrl( URI.create( "http://www.thiesen.org" ) );
+        exampleEvent.setType( EventType.CONCERT );
         
         final HelenaDAO<PublicEvent> dao = factory.forClassAndColumnFamily( PublicEvent.class, "Standard1" );
         
@@ -61,8 +92,6 @@ public class Main {
         System.out.println( events );
         
         dao.delete( exampleEvent );
-        
-        
     }
     
 }

@@ -29,15 +29,16 @@ import com.google.common.collect.Maps;
 
 class MarshalledObject {
 
-    private byte[] _id;
+    private byte[] _key;
+    private byte[] _superColumn;
     private final Map<String, byte[]> _values = Maps.newHashMap();
     
     static MarshalledObject create() {
         return new MarshalledObject();
     }
 
-    void setId( final byte[] value ) {
-        _id = value;
+    void setKey( final byte[] value ) {
+        _key = value;
         
     }
 
@@ -49,13 +50,25 @@ class MarshalledObject {
         
     }
 
-    byte[] getIdAsByteArray() {
-        return _id;
+    byte[] getKey() {
+        return _key;
     }
 
     Set<Map.Entry<String,byte[]>> getEntries() {
         return Collections.unmodifiableSet( _values.entrySet() );
         
+    }
+
+    public void setSuperColumn( final byte[] superColumn ) {
+        _superColumn = superColumn;
+    }
+
+    public byte[] getSuperColumn() {
+        return _superColumn;
+    }
+
+    public boolean isSuperColumnPresent() {
+        return _superColumn != null;
     }
 
 

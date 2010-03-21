@@ -18,7 +18,7 @@
  *  along with ecj4ant.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-package org.thiesen.helenaorm;
+package org.thiesen.helenaorm.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

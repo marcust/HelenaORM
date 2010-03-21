@@ -23,7 +23,7 @@ package org.thiesen.helenaorm.example;
 import java.net.URI;
 import java.util.UUID;
 
-import org.thiesen.helenaorm.Key;
+import org.thiesen.helenaorm.annotations.Key;
 
 public class PublicEvent {
 
@@ -32,6 +32,7 @@ public class PublicEvent {
     private String _description;
     private String _moreDescription;
     private URI _url;
+    private EventType _type;
     
     
     @Key
@@ -56,9 +57,10 @@ public class PublicEvent {
     
     @Override
     public String toString() {
-        return "PublicEvent [_description=" + _description + ", _id=" + _id + ", _moreDescription=" + _moreDescription + ", _name=" + _name + ", _url=" + _url
-                + "]";
+        return "PublicEvent [_description=" + _description + ", _id=" + _id + ", _moreDescription=" + _moreDescription + ", _name=" + _name + ", _type="
+                + _type + ", _url=" + _url + "]";
     }
+    
     public void setMoreDescription( final String moreDescription ) {
         _moreDescription = moreDescription;
     }
@@ -70,6 +72,12 @@ public class PublicEvent {
     }
     public URI getUrl() {
         return _url;
+    }
+    public void setType( final EventType type ) {
+        _type = type;
+    }
+    public EventType getType() {
+        return _type;
     }
     
     
