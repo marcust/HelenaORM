@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="ISO-8859-1" standalone="no"?>
+
+<project name="helenaorm" default="jar" basedir=".">
+     <!-- properties -->
+     <property name="src"                  value="src/" />
+     <property name="build"                value="build" />
+     <property name="classes"              value="${build}/classes" />
+     <property name="pkgbase"              value="org-thiesen-helenaorm" />
+
+     <property name="lib.home" value="lib/" />
+
+     <fileset dir="${lib.home}" id="libs">
+       <include name="apache-cassandra-0.5.1.jar" />
+       <include name="commons-beanutils-1.8.2.jar" />
+       <include name="commons-lang-2.4.jar" />
+       <include name="commons-logging-1.1.1.jar" />
+       <include name="commons-pool-1.5.3.jar" />
+       <include name="google-collect-1.0-rc4.jar" />
+       <include name="hector-0.5.1-8.jar" />
+       <include name="libthrift-r820831.jar" />
+       <include name="log4j-1.2.15.jar" />
+       <include name="org-thiesen-gitant-v0.0.7.jar" />
+       <include name="perf4j-0.9.12.jar" />
+       <include name="slf4j-api-1.5.6.jar" />
+       <include name="slf4j-log4j12-1.5.6.jar" />
+       <include name="org.eclipse.jgit-0.6.0-SNAPSHOT.jar" />
+     </fileset>	
+
+    <path id="compile.classpath">
+       <fileset refid="libs" />
+    </path>
+
+
+    <target name="git-info" description="Use the Task">
+        <taskdef name="git-info" classname="org.thiesen.ant.git.ExtractGitInfo">
+            <classpath>
+                <fileset refid="libs"/>
+            </classpath>
+	</taskdef>
+        <git-info 
+           baseDir=".git"
+           propertyPrefix=""
+           displayInfo="true"
+           /> 
+    </target>
+
+
+    <target name=".classpath" description="Generate Eclipse .classpath file">
+        <mkdir dir=".eclipse-out"/>
+        <pathconvert property="eclipse.entries" refid="compile.classpath"
+            pathsep="&quot;/&gt;&#10;    &lt;classpathentry kind=&quot;lib&quot; path=&quot;" />
+        <echo file=".classpath"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry excluding="*.svn|.svn/" kind="src" path="${src}"/>
+    <classpathentry kind="lib" path="${eclipse.entries}"/>
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+    <classpathentry kind="output" path=".eclipse-bin"/>
+</classpath>]]>
+        </echo>
+    </target>
+    
+     <target name="prepare" depends="git-info">
+        <mkdir dir="${build}" />
+        <mkdir dir="${classes}" />
+     </target>
+
+     <target name="compile" depends="prepare" description="compile it">
+        <javac srcdir="${src}" source="1.6" target="1.6" 
+               destdir="${classes}" debug="on">
+            <compilerarg value="-Xlint:all"/>
+            <compilerarg value="-Werror"/>
+            <classpath>
+                <fileset refid="libs"/>
+            </classpath>
+         </javac>
+     </target>
+     
+     <target name="jar" depends="compile" description="make jar">
+	 <jar jarfile="${build}/${pkgbase}-${git.version}.jar">
+           <fileset dir="${classes}">
+              <include name="**/*.class"/>
+           </fileset>
+            <manifest>
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Git-Branch" value="${git.branch}" />
+                <attribute name="Git-Workingcopy-Dirty" value="${git.workingcopy.dirty}" />
+                <attribute name="Git-Commit" value="${git.commit}" />
+                <attribute name="Git-Tag" value="${git.tag}" />
+                <attribute name="Git-Tag-Author-Name" value="${git.tag.author.name}" />
+                <attribute name="Git-Tag-Author-Email" value="${git.tag.author.email}" />
+                <attribute name="Git-Tag-Dirty" value="${git.tag.dirty}" />
+            </manifest>
+        </jar>
+     </target>
+
+     <target name="clean" description="remove">
+        <delete dir="${pkgbase}"/>
+        <delete dir="${classes}"/>
+        <delete dir="${build}"/>
+     </target>
+
+
+
+
+</project>
+
+
+
+
