@@ -37,6 +37,7 @@ import me.prettyprint.cassandra.service.Keyspace;
 
 import org.apache.cassandra.service.Column;
 import org.apache.cassandra.service.ColumnParent;
+import org.apache.cassandra.service.ColumnPath;
 import org.apache.cassandra.service.NotFoundException;
 import org.apache.cassandra.service.SlicePredicate;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -254,10 +255,10 @@ public class HelenaDAO<T> {
 
     private Object convert( final Class<?> returnType, final byte[] value ) {
         if ( _typeMappings.containsKey( returnType ) ) {
-            return _typeMappings.get( returnType ).fromBytes( value );
+            return returnType.cast(_typeMappings.get( returnType ).fromBytes( value ) );
         }
         if ( Serializable.class.isAssignableFrom( returnType ) ) {
-            return deserialize( value );
+            return returnType.cast( deserialize( value ) );
         }
 
         throw new HelenaRuntimeException("Can not handle type " + returnType.getClass() + ", maybe you have getters and setters with different Types? Otherwise, add a Type mapping");
@@ -278,8 +279,40 @@ public class HelenaDAO<T> {
         } catch ( final ClassNotFoundException e ) {
             throw new HelenaRuntimeException( e );
         }
-        
+
 
     }
+
+    public void delete( final T object ) {
+        delete( getKeyFrom( object ) );
+    }
+
+    private String getKeyFrom( final T object ) {
+        try {
+            return bytesToString( typeConvert( PropertyUtils.getProperty( object, _keyPropertyDescriptor.getName() ) ) );
+        } catch ( final IllegalAccessException e ) {
+            throw new HelenaRuntimeException( e );
+        } catch ( final InvocationTargetException e ) {
+            throw new HelenaRuntimeException( e );
+        } catch ( final NoSuchMethodException e ) {
+            throw new HelenaRuntimeException( e );
+        }
+    }
+
+    private void delete( final String key ) {
+        try {
+            execute(new Command<Void>(){
+                @Override
+                public Void execute(final Keyspace ks) throws Exception {
+                    ks.remove( key, new ColumnPath( _columnFamily, null, null ) );
+                    return null;
+                }
+            });
+        } catch ( final Exception e ) {
+            throw new HelenaRuntimeException( e );
+        }
+    }
+
+
 
 }

@@ -53,6 +53,9 @@ public class Main {
         
         System.out.println( publicEvent );
         
+        dao.delete( exampleEvent );
+        
+        
     }
     
 }
