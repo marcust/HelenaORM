@@ -62,10 +62,10 @@ public class Main {
         final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
                 "localhost",
                 9160, 
-                "Keyspace1", SerializeUnknownClasses.NO );
+                SerializeUnknownClasses.NO );
         
         
-        final HelenaDAO<User> userDAO = factory.forClassAndColumnFamily( User.class, "Super1" );
+        final HelenaDAO<User> userDAO = factory.makeDaoForClass( User.class );
         
         userDAO.insert( admin );
         userDAO.insert( normalUser );
@@ -78,7 +78,7 @@ public class Main {
         final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
                 "localhost",
                 9160, 
-                "Keyspace1", SerializeUnknownClasses.YES );
+                SerializeUnknownClasses.YES );
         
         final PublicEvent exampleEvent = new PublicEvent();
         exampleEvent.setName( "Session im Irish Rover" );
@@ -87,7 +87,7 @@ public class Main {
         exampleEvent.setUrl( URI.create( "http://www.thiesen.org" ) );
         exampleEvent.setType( EventType.CONCERT );
         
-        final HelenaDAO<PublicEvent> dao = factory.forClassAndColumnFamily( PublicEvent.class, "Standard1" );
+        final HelenaDAO<PublicEvent> dao = factory.makeDaoForClass( PublicEvent.class );
         
         dao.insert( exampleEvent );
         

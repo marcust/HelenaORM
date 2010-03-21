@@ -48,36 +48,34 @@ public class HelenaORMDAOFactory {
     
     private final String _hostname;
     private final int _port;
-    private final String _keyspace;
     private final SerializeUnknownClasses _serializationPolicy;
     private final ImmutableMap<Class<?>, TypeMapping<?>> _typeMappings;
 
-    private HelenaORMDAOFactory( final String hostname, final int port, final String keyspace,
+    private HelenaORMDAOFactory( final String hostname, final int port,
             final SerializeUnknownClasses serializationPolicy, final Map<Class<?>, TypeMapping<?>> mappings ) {
         _hostname = hostname;
         _port = port;
-        _keyspace = keyspace;
         _serializationPolicy = serializationPolicy;
         _typeMappings = ImmutableMap.<Class<?>, TypeMapping<?>>builder().putAll( DEFAULT_TYPES ).putAll(  mappings ).build();
     }
     
-    public static HelenaORMDAOFactory withConfig( final String hostname, final int port, final String keyspace ) {
-        return withConfig( hostname, port, keyspace, SerializeUnknownClasses.YES );
+    public static HelenaORMDAOFactory withConfig( final String hostname, final int port ) {
+        return withConfig( hostname, port, SerializeUnknownClasses.YES );
     }
     
-    public static HelenaORMDAOFactory withConfig( final String hostname, final int port, final String keyspace,
+    public static HelenaORMDAOFactory withConfig( final String hostname, final int port,
             final SerializeUnknownClasses serializationPolicy ) {
-        return new HelenaORMDAOFactory( hostname, port, keyspace, serializationPolicy, ImmutableMap.<Class<?>, TypeMapping<?>>of() );
+        return new HelenaORMDAOFactory( hostname, port, serializationPolicy, ImmutableMap.<Class<?>, TypeMapping<?>>of() );
     }
     
-    public static HelenaORMDAOFactory withConfig( final String hostname, final int port, final String keyspace,
+    public static HelenaORMDAOFactory withConfig( final String hostname, final int port,
             final SerializeUnknownClasses serializationPolicy, final Map<Class<?>,TypeMapping<?>> mappings ) {
-        return new HelenaORMDAOFactory( hostname, port, keyspace, serializationPolicy, mappings );
+        return new HelenaORMDAOFactory( hostname, port, serializationPolicy, mappings );
     }
     
-    public <T> HelenaDAO<T> forClassAndColumnFamily( final Class<T> clz, final String columnFamily ) {
-        return new HelenaDAO<T>( clz, columnFamily,
-                _hostname, _port, _keyspace, _serializationPolicy, _typeMappings );
+    public <T> HelenaDAO<T> makeDaoForClass( final Class<T> clz ) {
+        return new HelenaDAO<T>( clz,
+                _hostname, _port, _serializationPolicy, _typeMappings );
     }
 
 

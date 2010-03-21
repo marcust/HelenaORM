@@ -38,7 +38,8 @@ import org.apache.cassandra.service.NotFoundException;
 import org.apache.cassandra.service.SlicePredicate;
 import org.apache.cassandra.service.SuperColumn;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.thiesen.helenaorm.annotations.Key;
+import org.thiesen.helenaorm.annotations.HelenaBean;
+import org.thiesen.helenaorm.annotations.KeyProperty;
 import org.thiesen.helenaorm.annotations.SuperColumnProperty;
 
 import com.google.common.collect.ImmutableList;
@@ -62,15 +63,19 @@ public class HelenaDAO<T> {
     private PropertyDescriptor _superColumnPropertyDescriptor;
     private final TypeConverter _typeConverter;
 
-    HelenaDAO( final Class<T> clz, final String columnFamily, final String hostname, final int port, final String keyspace, final SerializeUnknownClasses serializationPolicy,
+    HelenaDAO( final Class<T> clz, final String hostname, final int port, final SerializeUnknownClasses serializationPolicy,
             final ImmutableMap<Class<?>, TypeMapping<?>> typeMappings ) {
+        if ( !clz.isAnnotationPresent( HelenaBean.class ) ) {
+            throw new IllegalArgumentException("Trying to get a HelenaDAO for a class that is not mapped with @HelenaBean");
+        }
+        final HelenaBean annotation = clz.getAnnotation( HelenaBean.class );
         _typeConverter = new TypeConverter( typeMappings, serializationPolicy );
         _clz = clz;
         _propertyDescriptors = PropertyUtils.getPropertyDescriptors( clz );
-        _columnFamily = columnFamily;
+        _columnFamily = annotation.columnFamily();
         _hostname = hostname;
         _port = port;
-        _keyspace = keyspace;
+        _keyspace = annotation.keyspace();
 
         final Builder<byte[]> setBuilder = ImmutableSet.<byte[]>builder();
         for ( final PropertyDescriptor descriptor : _propertyDescriptors ) {
@@ -85,7 +90,7 @@ public class HelenaDAO<T> {
         _columnNames = ImmutableList.copyOf( setBuilder.build() );
 
         if ( _keyPropertyDescriptor == null ) {
-            throw new HelenaRuntimeException("Could not find key of class " + clz.getName() + ", did you annotate with @Key" );
+            throw new HelenaRuntimeException("Could not find key of class " + clz.getName() + ", did you annotate with @KeyProperty" );
         }
     }
 
@@ -131,7 +136,7 @@ public class HelenaDAO<T> {
     }
 
     private boolean isKeyProperty( final PropertyDescriptor d ) {
-        return safeIsAnnotationPresent( d, Key.class );
+        return safeIsAnnotationPresent( d, KeyProperty.class );
     }
 
     private boolean safeIsAnnotationPresent( final PropertyDescriptor d, final Class<? extends Annotation> annotation ) {

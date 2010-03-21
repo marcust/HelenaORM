@@ -23,8 +23,10 @@ package org.thiesen.helenaorm.example;
 import java.net.URI;
 import java.util.UUID;
 
-import org.thiesen.helenaorm.annotations.Key;
+import org.thiesen.helenaorm.annotations.HelenaBean;
+import org.thiesen.helenaorm.annotations.KeyProperty;
 
+@HelenaBean( keyspace="Keyspace1", columnFamily="Standard1")
 public class PublicEvent {
 
     private UUID _id;
@@ -35,7 +37,7 @@ public class PublicEvent {
     private EventType _type;
     
     
-    @Key
+    @KeyProperty
     public UUID getId() {
         return _id;
     }

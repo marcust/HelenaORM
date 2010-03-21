@@ -11,10 +11,11 @@
  */
 package org.thiesen.helenaorm.example;
 
-import org.thiesen.helenaorm.annotations.Key;
+import org.thiesen.helenaorm.annotations.HelenaBean;
+import org.thiesen.helenaorm.annotations.KeyProperty;
 import org.thiesen.helenaorm.annotations.SuperColumnProperty;
 
-
+@HelenaBean( keyspace="Keyspace1", columnFamily="Super1")
 public class User {
 
     private UserType _type;
@@ -22,7 +23,7 @@ public class User {
     private String _firstname;
     private String _lastname;
     
-    @Key
+    @KeyProperty
     public UserType getType() {
         return _type;
     }
