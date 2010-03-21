@@ -299,7 +299,7 @@ public class HelenaDAO<T> {
         }
     }
 
-    private void delete( final String key ) {
+    public void delete( final String key ) {
         try {
             execute(new Command<Void>(){
                 @Override
@@ -311,6 +311,37 @@ public class HelenaDAO<T> {
         } catch ( final Exception e ) {
             throw new HelenaRuntimeException( e );
         }
+    }
+
+    public List<T> get( final List<String> keys ) {
+        final ColumnParent parent = new ColumnParent();
+        parent.setColumn_family( _columnFamily );
+        final SlicePredicate predicate = new SlicePredicate();
+        predicate.setColumn_names( _columnNames );
+        try {
+            return execute(new Command<List<T>>(){
+                @Override
+                public List<T> execute(final Keyspace ks) throws Exception {
+
+                    final Map<String,List<Column>> slice = ks.multigetSlice( keys, parent , predicate );
+
+                    return convertToList( slice );
+
+                }
+            }); 
+        } catch ( final Exception e ) {
+            throw new HelenaRuntimeException( e );
+        }
+
+
+    }
+
+    private List<T> convertToList( final Map<String, List<Column>> slice ) {
+        final ImmutableList.Builder<T> listBuilder = ImmutableList.<T>builder();
+        for ( final Map.Entry<String, List<Column>> entry : slice.entrySet() ) {
+            listBuilder.add( applyColumns( entry.getKey(), entry.getValue() ) ); 
+        }
+        return listBuilder.build();
     }
 
 

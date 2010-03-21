@@ -21,11 +21,14 @@
 package org.thiesen.helenaorm.example;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 import org.thiesen.helenaorm.HelenaDAO;
 import org.thiesen.helenaorm.HelenaORMDAOFactory;
 import org.thiesen.helenaorm.SerializeUnknownClasses;
+
+import com.google.common.collect.ImmutableList;
 
 
 public class Main {
@@ -52,6 +55,10 @@ public class Main {
         final PublicEvent publicEvent = dao.get( exampleEvent.getId().toString() );
         
         System.out.println( publicEvent );
+        
+        final List<PublicEvent> events = dao.get( ImmutableList.of( exampleEvent.getId().toString() ) );
+        
+        System.out.println( events );
         
         dao.delete( exampleEvent );
         
