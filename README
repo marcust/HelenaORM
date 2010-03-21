@@ -24,3 +24,4 @@ It is work in progress :).
         
         System.out.println( publicEvent );
         
+See org.thiesen.helenaorm.example.Main for more examples.

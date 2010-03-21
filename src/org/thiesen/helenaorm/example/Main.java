@@ -1,6 +1,6 @@
 /*
  * $ Id $
- * (c) Copyright 2009 Marcus Thiesen (marcus@thiesen.org)
+ * (c) Copyright 2010 Marcus Thiesen (marcus@thiesen.org)
  *
  *  This file is part of HelenaORM.
  *
@@ -15,7 +15,7 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with ecj4ant.  If not, see <http://www.gnu.org/licenses/>.
+ *  along with HelenaORM.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 package org.thiesen.helenaorm.example;
