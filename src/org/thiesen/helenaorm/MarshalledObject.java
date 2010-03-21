@@ -27,21 +27,21 @@ import java.util.Set;
 import com.google.common.collect.Maps;
 
 
-public class MarshalledObject {
+class MarshalledObject {
 
     private byte[] _id;
     private final Map<String, byte[]> _values = Maps.newHashMap();
     
-    public static MarshalledObject create() {
+    static MarshalledObject create() {
         return new MarshalledObject();
     }
 
-    public void setId( final byte[] value ) {
+    void setId( final byte[] value ) {
         _id = value;
         
     }
 
-    public void addValue( final String name, final byte[] value ) {
+    void addValue( final String name, final byte[] value ) {
         if ( _values.put( name, value ) != null ) {
             throw new HelenaRuntimeException("Property with name " + name + " had already" +
             		" a value, overwriting is illegal");
@@ -49,11 +49,11 @@ public class MarshalledObject {
         
     }
 
-    public byte[] getIdAsByteArray() {
+    byte[] getIdAsByteArray() {
         return _id;
     }
 
-    public Set<Map.Entry<String,byte[]>> getEntries() {
+    Set<Map.Entry<String,byte[]>> getEntries() {
         return Collections.unmodifiableSet( _values.entrySet() );
         
     }
