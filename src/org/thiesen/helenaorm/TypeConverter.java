@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableMap;
 
 class TypeConverter {
@@ -131,6 +132,20 @@ class TypeConverter {
         } catch ( final ClassNotFoundException e ) {
             throw new HelenaRuntimeException( e );
         }
+    }
+
+
+
+    public Function<String,byte[]> toByteArrayFunction() {
+        return new Function<String, byte[]>() {
+
+            @Override
+            public byte[] apply( final String arg0 ) {
+                return stringToBytes( arg0 );
+            }
+            
+        };
+        
     }
 
 

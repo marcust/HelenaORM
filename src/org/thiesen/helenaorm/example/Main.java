@@ -51,6 +51,14 @@ public class Main {
         normalUser.setLastname( "Example" );
         normalUser.setUsername( "joex20" );
         
+        
+        final User normalUseress = new User();
+        normalUseress.setType( UserType.USER );
+        normalUseress.setFirstname( "Jane" );
+        normalUseress.setLastname( "Example" );
+        normalUseress.setUsername( "jane73" );
+        
+        
         final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
                 "localhost",
                 9160, 
@@ -61,7 +69,9 @@ public class Main {
         
         userDAO.insert( admin );
         userDAO.insert( normalUser );
+        userDAO.insert( normalUseress );
         
+        System.out.println( userDAO.get( UserType.USER.toString(), ImmutableList.of( "jane73", "joex20" ) ) );
     }
 
     private static void simpleExample() {

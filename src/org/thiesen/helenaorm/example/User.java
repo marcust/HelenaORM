@@ -50,5 +50,12 @@ public class User {
         _lastname = lastname;
     }
     
+    @Override
+    public String toString() {
+        return "User [_firstname=" + _firstname + ", _lastname=" + _lastname + ", _type=" + _type + ", _username=" + _username + "]";
+    }
+    
+    
+    
     
 }

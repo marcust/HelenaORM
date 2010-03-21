@@ -44,6 +44,7 @@ import org.thiesen.helenaorm.annotations.SuperColumnProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableSet.Builder;
 
@@ -118,12 +119,12 @@ public class HelenaDAO<T> {
                 }
             }
         }
-        
+
         if ( marshalledObject.getKey() == null ||
                 marshalledObject.getKey().length == 0 ) {
             throw new HelenaRuntimeException("Key is null, can't store object");
         }
-            
+
 
         store( marshalledObject );
 
@@ -135,7 +136,7 @@ public class HelenaDAO<T> {
 
     private boolean safeIsAnnotationPresent( final PropertyDescriptor d, final Class<? extends Annotation> annotation ) {
         return nullSafeAnnotationPresent( annotation, d.getReadMethod() ) ||
-          nullSafeAnnotationPresent( annotation, d.getWriteMethod() );
+        nullSafeAnnotationPresent( annotation, d.getWriteMethod() );
     }
 
     private boolean nullSafeAnnotationPresent( final Class<? extends Annotation> annotation, final Method method ) {
@@ -158,10 +159,10 @@ public class HelenaDAO<T> {
         for ( final Map.Entry<String, byte[]> property : marshalledObject.getEntries() ) {
             columnList.add( toColumn( property, timestamp ) );
         }
-        
+
         final Map<String, List<Column>> columnMap;
         final Map<String, List<SuperColumn>> superColumnMap;
-        
+
         if ( marshalledObject.isSuperColumnPresent() ) {
             final SuperColumn superColumn = new SuperColumn( marshalledObject.getSuperColumn(), columnList );
             superColumnMap = ImmutableMap.<String, List<SuperColumn>>of( _columnFamily, ImmutableList.of( superColumn ) );
@@ -170,7 +171,7 @@ public class HelenaDAO<T> {
             columnMap = ImmutableMap.<String,List<Column>>of( _columnFamily, columnList );
             superColumnMap = null;
         }
-        
+
         try {
             execute(new Command<Void>(){
                 @Override
@@ -218,7 +219,7 @@ public class HelenaDAO<T> {
         }
     }
 
-    private T applyColumns( final String key, final List<Column> slice ) {
+    private T applyColumns( final String key, final Iterable<Column> slice ) {
         try {
             final T newInstance = _clz.newInstance();
 
@@ -248,8 +249,30 @@ public class HelenaDAO<T> {
         }
     }
 
+    private List<T> applyColumns( final String key, final List<SuperColumn> slice ) {
+        final ImmutableList.Builder<T> listBuilder = ImmutableList.builder();
+        for ( final SuperColumn superColumn : slice ) {
+            final T object = applyColumns( key, superColumn.getColumns() );
+            applySuperColumnName( object, superColumn.getName() );
+            listBuilder.add( object );
+        }
+        return listBuilder.build();
 
+    }
 
+    private void applySuperColumnName( final T object, final byte[] value ) {
+        final Class<?> returnType = _superColumnPropertyDescriptor.getReadMethod().getReturnType();
+        try {
+            PropertyUtils.setProperty( object, _superColumnPropertyDescriptor.getName(),
+                    _typeConverter.convertByteArrayToValueObject( returnType, value ) );
+        } catch ( final IllegalAccessException e ) {
+            throw new HelenaRuntimeException( e );
+        } catch ( final InvocationTargetException e ) {
+            throw new HelenaRuntimeException( e );
+        } catch ( final NoSuchMethodException e ) {
+            throw new HelenaRuntimeException( e );
+        }
+    }
 
     public void delete( final T object ) {
         delete( getKeyFrom( object ) );
@@ -281,7 +304,7 @@ public class HelenaDAO<T> {
         }
     }
 
-    public List<T> get( final List<String> keys ) {
+    public List<T> get( final Iterable<String> keys ) {
         final ColumnParent parent = makeColumnParent();
         final SlicePredicate predicate = makeSlicePredicateWithAllPropertyColumns();
         try {
@@ -289,7 +312,7 @@ public class HelenaDAO<T> {
                 @Override
                 public List<T> execute(final Keyspace ks) throws Exception {
 
-                    final Map<String,List<Column>> slice = ks.multigetSlice( keys, parent , predicate );
+                    final Map<String,List<Column>> slice = ks.multigetSlice( ImmutableList.copyOf( keys ), parent , predicate );
 
                     return convertToList( slice );
 
@@ -331,14 +354,45 @@ public class HelenaDAO<T> {
         return parent;
     }
 
-    
-    
+
+
     private List<T> convertToList( final Map<String, List<Column>> slice ) {
         final ImmutableList.Builder<T> listBuilder = ImmutableList.<T>builder();
         for ( final Map.Entry<String, List<Column>> entry : slice.entrySet() ) {
             listBuilder.add( applyColumns( entry.getKey(), entry.getValue() ) ); 
         }
         return listBuilder.build();
+    }
+
+    public List<T> get( final String key, final Iterable<String> columns ) {
+        final ColumnParent parent = makeColumnParent();
+        final SlicePredicate predicate = makeSlicePredicateWithColumns( columns );
+
+        try {
+            return execute(new Command<List<T>>(){
+                @Override
+                public List<T> execute(final Keyspace ks) throws Exception {
+                    try {
+                        final List<SuperColumn> slice = ks.getSuperSlice( key, parent, predicate );
+
+                        return applyColumns( key, slice );
+                    } catch (final NotFoundException e) {
+                        return null;
+                    }
+                }
+
+            }); 
+        } catch ( final Exception e ) {
+            throw new HelenaRuntimeException( e );
+        }
+
+
+    }
+
+    private SlicePredicate makeSlicePredicateWithColumns( final Iterable<String> columns ) {
+        final SlicePredicate predicate = new SlicePredicate();
+        predicate.setColumn_names( ImmutableList.copyOf( Iterables.transform( columns, _typeConverter.toByteArrayFunction() ) ) );
+        return predicate;
     }
 
 
