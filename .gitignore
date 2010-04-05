@@ -6,4 +6,5 @@ build
 .fbprefs
 .settings
 bin
+.eclipse-bin
 

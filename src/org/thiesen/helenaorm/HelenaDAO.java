@@ -31,12 +31,12 @@ import java.util.Map.Entry;
 import me.prettyprint.cassandra.dao.Command;
 import me.prettyprint.cassandra.service.Keyspace;
 
-import org.apache.cassandra.service.Column;
-import org.apache.cassandra.service.ColumnParent;
-import org.apache.cassandra.service.ColumnPath;
-import org.apache.cassandra.service.NotFoundException;
-import org.apache.cassandra.service.SlicePredicate;
-import org.apache.cassandra.service.SuperColumn;
+import org.apache.cassandra.thrift.Column;
+import org.apache.cassandra.thrift.ColumnParent;
+import org.apache.cassandra.thrift.ColumnPath;
+import org.apache.cassandra.thrift.NotFoundException;
+import org.apache.cassandra.thrift.SlicePredicate;
+import org.apache.cassandra.thrift.SuperColumn;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.thiesen.helenaorm.annotations.HelenaBean;
 import org.thiesen.helenaorm.annotations.KeyProperty;
@@ -300,7 +300,7 @@ public class HelenaDAO<T> {
             execute(new Command<Void>(){
                 @Override
                 public Void execute(final Keyspace ks) throws Exception {
-                    ks.remove( key, new ColumnPath( _columnFamily, null, null ) );
+                    ks.remove( key, new ColumnPath( _columnFamily ) );
                     return null;
                 }
             });
