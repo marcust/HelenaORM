@@ -58,6 +58,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableSet.Builder;
+import org.apache.cassandra.thrift.SliceRange;
 
 public class HelenaDAO<T> {
 
@@ -292,6 +293,7 @@ public class HelenaDAO<T> {
 
             for ( final Column c : slice ) {
                 final String name = _typeConverter.bytesToString( c.name );
+                System.out.println("Found name: " + name);
                 if ( PropertyUtils.isWriteable( newInstance, name ) ) {
                     final PropertyDescriptor propertyDescriptor = PropertyUtils.getPropertyDescriptor( newInstance, name );
                     final Class<?> returnType = propertyDescriptor.getReadMethod().getReturnType();
@@ -401,6 +403,30 @@ public class HelenaDAO<T> {
         }
     }
 
+    public List<T> getSuperRange(final String key, String after, final int limit) {
+        final ColumnParent parent = makeColumnParent();
+        final SlicePredicate predicate = new SlicePredicate();
+        SliceRange sliceRange = new SliceRange();
+        sliceRange.setStart(_typeConverter.stringToBytes(after));
+        sliceRange.setFinish(new byte[0]);
+        sliceRange.setCount(limit);
+        predicate.setSlice_range(sliceRange);
+
+        try {
+            return execute(new Command<List<T>>(){
+                @Override
+                @SuppressWarnings("deprecation")
+                public List<T> execute(final Keyspace ks) throws HectorException {
+                        final Map<String, List<SuperColumn>> slice = ks.getSuperRangeSlice(parent, predicate, key, key, limit);
+                        return convertToListSuper(slice);
+                }
+
+            });
+        } catch ( final Exception e ) {
+            throw new HelenaRuntimeException( e );
+        }
+    }
+
     private SlicePredicate makeSlicePredicateWithAllPropertyColumns() {
         final SlicePredicate predicate = new SlicePredicate();
         predicate.setColumn_names( _columnNames );
@@ -413,6 +439,12 @@ public class HelenaDAO<T> {
         return parent;
     }
 
+    private ColumnPath makeColumnPath(String superColumn) {
+        final ColumnPath path = new ColumnPath(_columnFamily);
+        path.setSuper_column(_typeConverter.stringToBytes(superColumn));
+        return path;
+    }
+
     private List<T> convertToList( final Map<String, List<Column>> slice ) {
         final ImmutableList.Builder<T> listBuilder = ImmutableList.<T>builder();
         for ( final Map.Entry<String, List<Column>> entry : slice.entrySet() ) {
@@ -420,6 +452,15 @@ public class HelenaDAO<T> {
         }
         return listBuilder.build();
     }
+    
+    private List<T> convertToListSuper( final Map<String, List<SuperColumn>> slice ) {
+        final ImmutableList.Builder<T> listBuilder = ImmutableList.<T>builder();
+        for ( final Map.Entry<String, List<SuperColumn>> entry : slice.entrySet() ) {
+            listBuilder.addAll(applyColumns( entry.getKey(), entry.getValue() ));
+        }
+        return listBuilder.build();
+    }
+
 
     public List<T> get( final String key, final Iterable<String> columns ) {
     	
