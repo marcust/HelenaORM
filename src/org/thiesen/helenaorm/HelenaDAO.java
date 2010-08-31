@@ -137,6 +137,10 @@ public class HelenaDAO<T> {
         return safeIsAnnotationPresent( descriptor, SuperColumnProperty.class );
     }
 
+    /**
+     * Inserts a object into cassandra
+     * @param object The object to insert.
+     */
     public void insert( final T object ) {
 
         final MarshalledObject marshalledObject = MarshalledObject.create();
