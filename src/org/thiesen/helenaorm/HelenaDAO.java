@@ -217,6 +217,9 @@ public class HelenaDAO<T> {
                     try {
                         final List<Column> slice = ks.getSlice( key, parent , predicate );
 
+                        if ( Iterables.isEmpty( slice ) ) {
+                            return null;
+                        }
 
                         return applyColumns( key, slice );
                     } catch (final NotFoundException e) {
