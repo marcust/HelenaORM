@@ -114,7 +114,7 @@ public class HelenaDAO<T> {
                     final byte[] value = _typeConverter.convertValueObjectToByteArray( PropertyUtils.getProperty( object, name ) );
                     if ( isKeyProperty( d ) ) {
                         marshalledObject.setKey( value );
-                    } if ( isSuperColumnProperty( d ) ) {
+                    } else if ( isSuperColumnProperty( d ) ) {
                         marshalledObject.setSuperColumn( value );
                     } else {
                         marshalledObject.addValue( name, value );
