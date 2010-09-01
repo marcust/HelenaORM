@@ -138,7 +138,7 @@ public class HelenaDAO<T> {
     }
 
     /**
-     * Inserts a object into cassandra
+     * Inserts a object into Cassandra
      * @param object The object to insert.
      */
     public void insert( final T object ) {
@@ -297,7 +297,6 @@ public class HelenaDAO<T> {
 
             for ( final Column c : slice ) {
                 final String name = _typeConverter.bytesToString( c.name );
-                System.out.println("Found name: " + name);
                 if ( PropertyUtils.isWriteable( newInstance, name ) ) {
                     final PropertyDescriptor propertyDescriptor = PropertyUtils.getPropertyDescriptor( newInstance, name );
                     final Class<?> returnType = propertyDescriptor.getReadMethod().getReturnType();
@@ -429,6 +428,29 @@ public class HelenaDAO<T> {
         } catch ( final Exception e ) {
             throw new HelenaRuntimeException( e );
         }
+    }
+
+    public List<T> getBySuperColumnProperty(final Iterable<String> values) {
+        
+        final ColumnParent parent = makeColumnParent();
+        final SlicePredicate predicate = makeSlicePredicateWithAllPropertyColumns();
+
+        try {
+            return execute(new Command<List<T>>(){
+                @Override
+                public List<T> execute(final Keyspace ks) throws HectorException {
+
+                    final Map<String,List<Column>> slice = ks.multigetSlice( ImmutableList.copyOf( values ), parent , predicate );
+
+                    return convertToList( slice );
+
+                }
+            });
+        } catch ( final Exception e ) {
+            throw new HelenaRuntimeException( e );
+        }
+
+
     }
 
     private SlicePredicate makeSlicePredicateWithAllPropertyColumns() {
