@@ -96,6 +96,10 @@ public class HelenaDAO<T> {
         _port = port;
         _keyspace = annotation.keyspace();
 
+        if (annotation.consistency() != null) {
+        	this.setConsistencyLevel(annotation.consistency());
+        }
+        
         _fields = new HashMap<String, Field>();
         for (Field field : clz.getDeclaredFields()) {
         	_fields.put(field.getName(), field);

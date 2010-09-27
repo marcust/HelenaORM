@@ -30,10 +30,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.apache.cassandra.thrift.ConsistencyLevel;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface HelenaBean {
-    String keyspace();
-    String columnFamily();
-    
+	
+	String keyspace();
+
+	String columnFamily();
+
+	ConsistencyLevel consistency() default ConsistencyLevel.QUORUM;
+	
 }
