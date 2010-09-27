@@ -340,7 +340,8 @@ public class HelenaDAO<T> {
         final SlicePredicate predicate = makeSlicePredicateWithAllPropertyColumns();
         try {
             return execute(new Command<List<T>>(){
-                @Override
+                @SuppressWarnings("deprecation")
+				@Override
                 public List<T> execute(final Keyspace ks) throws HectorException {
 
                     final Map<String,List<Column>> slice = ks.getRangeSlice( parent, predicate, keyStart, keyEnd , amount );
