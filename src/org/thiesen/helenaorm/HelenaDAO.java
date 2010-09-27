@@ -27,8 +27,10 @@ package org.thiesen.helenaorm;
 
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -58,14 +60,19 @@ public class HelenaDAO<T> {
 
     private final String _hostname;
     private final int _port;
+    
     private final String _keyspace;
     private final String _columnFamily;
+    
     private final PropertyDescriptor[] _propertyDescriptors;
     private final ImmutableList<byte[]> _columnNames;
     private final Class<T> _clz;
     private PropertyDescriptor _keyPropertyDescriptor;
     private PropertyDescriptor _superColumnPropertyDescriptor;
     private final TypeConverter _typeConverter;
+
+    private Map<String, Field> _fields;
+    private Field _keyField;
 
     HelenaDAO( final Class<T> clz, final String hostname, final int port, final SerializeUnknownClasses serializationPolicy,
             final ImmutableMap<Class<?>, TypeMapping<?>> typeMappings ) {
@@ -83,6 +90,14 @@ public class HelenaDAO<T> {
         _port = port;
         _keyspace = annotation.keyspace();
 
+        _fields = new HashMap<String, Field>();
+        for (Field field : clz.getDeclaredFields()) {
+        	_fields.put(field.getName(), field);
+        	if (field.isAnnotationPresent(KeyProperty.class)) {
+        		_keyField = field;
+        	}
+		}
+        
         final Builder<byte[]> setBuilder = ImmutableSet.<byte[]>builder();
         for ( final PropertyDescriptor descriptor : _propertyDescriptors ) {
             setBuilder.add( _typeConverter.stringToBytes( descriptor.getName() ) );
@@ -95,7 +110,7 @@ public class HelenaDAO<T> {
         }
         _columnNames = ImmutableList.copyOf( setBuilder.build() );
 
-        if ( _keyPropertyDescriptor == null ) {
+        if ( _keyField == null && _keyPropertyDescriptor == null ) {
             throw new HelenaRuntimeException("Could not find key of class " + clz.getName() + ", did you annotate with @KeyProperty" );
         }
     }
@@ -145,8 +160,9 @@ public class HelenaDAO<T> {
     }
 
     private boolean safeIsAnnotationPresent( final PropertyDescriptor d, final Class<? extends Annotation> annotation ) {
-        return nullSafeAnnotationPresent( annotation, d.getReadMethod() ) ||
-        nullSafeAnnotationPresent( annotation, d.getWriteMethod() );
+        return nullSafeAnnotationPresent( annotation, _fields.get(d.getName()) ) ||
+	    	nullSafeAnnotationPresent( annotation, d.getReadMethod() ) ||
+	    	nullSafeAnnotationPresent( annotation, d.getWriteMethod() );
     }
 
     private boolean nullSafeAnnotationPresent( final Class<? extends Annotation> annotation, final Method method ) {
@@ -156,6 +172,10 @@ public class HelenaDAO<T> {
             }
         }
         return false;
+    }
+
+    private boolean nullSafeAnnotationPresent( final Class<? extends Annotation> annotation, final Field field ) {
+        return(field != null && field.isAnnotationPresent(annotation));
     }
 
     private boolean isReadWrite( final PropertyDescriptor d ) {
