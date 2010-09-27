@@ -48,6 +48,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.thiesen.helenaorm.annotations.HelenaBean;
 import org.thiesen.helenaorm.annotations.KeyProperty;
 import org.thiesen.helenaorm.annotations.SuperColumnProperty;
+import org.thiesen.helenaorm.annotations.Transient;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -126,6 +127,7 @@ public class HelenaDAO<T> {
         for ( final PropertyDescriptor d : _propertyDescriptors ) {
             if ( isReadWrite( d ) ) {
                 try {
+                	
                     final String name = d.getName();
                     final byte[] value = _typeConverter.convertValueObjectToByteArray( PropertyUtils.getProperty( object, name ) );
                     
@@ -133,7 +135,7 @@ public class HelenaDAO<T> {
                         marshalledObject.setKey( value );
                     } else if ( isSuperColumnProperty( d ) ) {
                         marshalledObject.setSuperColumn( value );
-                    } else {
+                    } else if ( !isTransient(d) ) {
                         marshalledObject.addValue( name, value );
                     }
 
@@ -157,6 +159,10 @@ public class HelenaDAO<T> {
 
     private boolean isKeyProperty( final PropertyDescriptor d ) {
         return safeIsAnnotationPresent( d, KeyProperty.class );
+    }
+
+    private boolean isTransient( final PropertyDescriptor d ) {
+        return safeIsAnnotationPresent( d, Transient.class );
     }
 
     private boolean safeIsAnnotationPresent( final PropertyDescriptor d, final Class<? extends Annotation> annotation ) {
