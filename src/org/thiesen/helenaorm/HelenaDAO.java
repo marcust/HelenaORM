@@ -34,12 +34,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import me.prettyprint.cassandra.dao.Command;
+import me.prettyprint.cassandra.model.HectorException;
 import me.prettyprint.cassandra.service.Keyspace;
 
 import org.apache.cassandra.thrift.Column;
 import org.apache.cassandra.thrift.ColumnParent;
 import org.apache.cassandra.thrift.ColumnPath;
-import org.apache.cassandra.thrift.NotFoundException;
 import org.apache.cassandra.thrift.SlicePredicate;
 import org.apache.cassandra.thrift.SuperColumn;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -53,7 +53,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.ImmutableSet.Builder;
-
 
 public class HelenaDAO<T> {
 
@@ -70,9 +69,11 @@ public class HelenaDAO<T> {
 
     HelenaDAO( final Class<T> clz, final String hostname, final int port, final SerializeUnknownClasses serializationPolicy,
             final ImmutableMap<Class<?>, TypeMapping<?>> typeMappings ) {
+    	
         if ( !clz.isAnnotationPresent( HelenaBean.class ) ) {
             throw new IllegalArgumentException("Trying to get a HelenaDAO for a class that is not mapped with @HelenaBean");
         }
+        
         final HelenaBean annotation = clz.getAnnotation( HelenaBean.class );
         _typeConverter = new TypeConverter( typeMappings, serializationPolicy );
         _clz = clz;
@@ -112,6 +113,7 @@ public class HelenaDAO<T> {
                 try {
                     final String name = d.getName();
                     final byte[] value = _typeConverter.convertValueObjectToByteArray( PropertyUtils.getProperty( object, name ) );
+                    
                     if ( isKeyProperty( d ) ) {
                         marshalledObject.setKey( value );
                     } else if ( isSuperColumnProperty( d ) ) {
@@ -135,9 +137,7 @@ public class HelenaDAO<T> {
             throw new HelenaRuntimeException("Key is null, can't store object");
         }
 
-
         store( marshalledObject );
-
     }
 
     private boolean isKeyProperty( final PropertyDescriptor d ) {
@@ -163,9 +163,11 @@ public class HelenaDAO<T> {
     }
 
     private void store( final MarshalledObject marshalledObject ) {
+    	
         final byte[] idColumn = marshalledObject.getKey();
         final List<Column> columnList = Lists.newLinkedList();
         final long timestamp = System.currentTimeMillis();
+        
         for ( final Map.Entry<String, byte[]> property : marshalledObject.getEntries() ) {
             columnList.add( toColumn( property, timestamp ) );
         }
@@ -185,7 +187,7 @@ public class HelenaDAO<T> {
         try {
             execute(new Command<Void>(){
                 @Override
-                public Void execute(final Keyspace ks) throws Exception {
+                public Void execute(final Keyspace ks) throws HectorException {
                     ks.batchInsert( _typeConverter.bytesToString( idColumn ), 
                             columnMap, superColumnMap );
 
@@ -195,7 +197,6 @@ public class HelenaDAO<T> {
         } catch ( final Exception e ) {
             throw new HelenaRuntimeException(e);
         }
-
     }
 
     private Column toColumn( final Entry<String, byte[]> property, final long timestamp ) {
@@ -207,13 +208,14 @@ public class HelenaDAO<T> {
     }
 
     public T get(final String key) {
+    	
         final ColumnParent parent = makeColumnParent();
         final SlicePredicate predicate = makeSlicePredicateWithAllPropertyColumns();
 
         try {
             return execute(new Command<T>(){
                 @Override
-                public T execute(final Keyspace ks) throws Exception {
+                public T execute(final Keyspace ks) throws HectorException {
                     try {
                         final List<Column> slice = ks.getSlice( key, parent , predicate );
 
@@ -222,7 +224,7 @@ public class HelenaDAO<T> {
                         }
 
                         return applyColumns( key, slice );
-                    } catch (final NotFoundException e) {
+                    } catch (final HectorException e) {
                         return null;
                     }
                 }
@@ -270,7 +272,6 @@ public class HelenaDAO<T> {
             listBuilder.add( object );
         }
         return listBuilder.build();
-
     }
 
     private void applySuperColumnName( final T object, final byte[] value ) {
@@ -307,7 +308,7 @@ public class HelenaDAO<T> {
         try {
             execute(new Command<Void>(){
                 @Override
-                public Void execute(final Keyspace ks) throws Exception {
+                public Void execute(final Keyspace ks) throws HectorException {
                     ks.remove( key, new ColumnPath( _columnFamily ) );
                     return null;
                 }
@@ -323,12 +324,10 @@ public class HelenaDAO<T> {
         try {
             return execute(new Command<List<T>>(){
                 @Override
-                public List<T> execute(final Keyspace ks) throws Exception {
+                public List<T> execute(final Keyspace ks) throws HectorException {
 
                     final Map<String,List<Column>> slice = ks.multigetSlice( ImmutableList.copyOf( keys ), parent , predicate );
-
                     return convertToList( slice );
-
                 }
             }); 
         } catch ( final Exception e ) {
@@ -342,12 +341,10 @@ public class HelenaDAO<T> {
         try {
             return execute(new Command<List<T>>(){
                 @Override
-                public List<T> execute(final Keyspace ks) throws Exception {
+                public List<T> execute(final Keyspace ks) throws HectorException {
 
                     final Map<String,List<Column>> slice = ks.getRangeSlice( parent, predicate, keyStart, keyEnd , amount );
-
                     return convertToList( slice );
-
                 }
             }); 
         } catch ( final Exception e ) {
@@ -367,8 +364,6 @@ public class HelenaDAO<T> {
         return parent;
     }
 
-
-
     private List<T> convertToList( final Map<String, List<Column>> slice ) {
         final ImmutableList.Builder<T> listBuilder = ImmutableList.<T>builder();
         for ( final Map.Entry<String, List<Column>> entry : slice.entrySet() ) {
@@ -378,28 +373,25 @@ public class HelenaDAO<T> {
     }
 
     public List<T> get( final String key, final Iterable<String> columns ) {
+    	
         final ColumnParent parent = makeColumnParent();
         final SlicePredicate predicate = makeSlicePredicateWithColumns( columns );
 
         try {
             return execute(new Command<List<T>>(){
                 @Override
-                public List<T> execute(final Keyspace ks) throws Exception {
+                public List<T> execute(final Keyspace ks) throws HectorException {
                     try {
                         final List<SuperColumn> slice = ks.getSuperSlice( key, parent, predicate );
-
                         return applyColumns( key, slice );
-                    } catch (final NotFoundException e) {
+                    } catch (final HectorException e) {
                         return null;
                     }
                 }
-
             }); 
         } catch ( final Exception e ) {
             throw new HelenaRuntimeException( e );
         }
-
-
     }
 
     private SlicePredicate makeSlicePredicateWithColumns( final Iterable<String> columns ) {
@@ -407,7 +399,5 @@ public class HelenaDAO<T> {
         predicate.setColumn_names( ImmutableList.copyOf( Iterables.transform( columns, _typeConverter.toByteArrayFunction() ) ) );
         return predicate;
     }
-
-
 
 }
