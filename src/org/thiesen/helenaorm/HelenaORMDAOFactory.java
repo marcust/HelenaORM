@@ -40,6 +40,7 @@ import org.thiesen.helenaorm.mappings.UUIDTypeMapping;
 import com.google.common.collect.ImmutableMap;
 
 public class HelenaORMDAOFactory {
+	
     @SuppressWarnings( "unused" )
     private static final Log LOG = LogFactory.getLog( HelenaORMDAOFactory.class );
     
@@ -53,6 +54,8 @@ public class HelenaORMDAOFactory {
     
     private final String _hostname;
     private final int _port;
+	private String[] _nodes = null;
+    
     private final SerializeUnknownClasses _serializationPolicy;
     private final ImmutableMap<Class<?>, TypeMapping<?>> _typeMappings;
 
@@ -64,6 +67,13 @@ public class HelenaORMDAOFactory {
         _typeMappings = ImmutableMap.<Class<?>, TypeMapping<?>>builder().putAll( DEFAULT_TYPES ).putAll(  mappings ).build();
     }
     
+    private HelenaORMDAOFactory( final String[] nodes,
+            final SerializeUnknownClasses serializationPolicy, final Map<Class<?>, TypeMapping<?>> mappings ) {
+    	
+    	this(null, 0, serializationPolicy, mappings);
+    	this._nodes = nodes;
+    }
+
     public static HelenaORMDAOFactory withConfig( final String hostname, final int port ) {
         return withConfig( hostname, port, SerializeUnknownClasses.YES );
     }
@@ -78,12 +88,26 @@ public class HelenaORMDAOFactory {
         return new HelenaORMDAOFactory( hostname, port, serializationPolicy, mappings );
     }
     
+	public static HelenaORMDAOFactory withConfig(final String[] nodes) {
+        return withConfig(nodes, SerializeUnknownClasses.YES);
+	}
+
+	public static HelenaORMDAOFactory withConfig(final String[] nodes,
+			SerializeUnknownClasses serializationPolicy) {
+        return new HelenaORMDAOFactory(nodes, serializationPolicy, ImmutableMap.<Class<?>, TypeMapping<?>>of());
+	}
+
+	public static HelenaORMDAOFactory withConfig(final String[] nodes,
+			SerializeUnknownClasses serializationPolicy, final Map<Class<?>,TypeMapping<?>> mappings) {
+        return new HelenaORMDAOFactory(nodes, serializationPolicy, mappings);
+	}
+
     public <T> HelenaDAO<T> makeDaoForClass( final Class<T> clz ) {
-        return new HelenaDAO<T>( clz,
-                _hostname, _port, _serializationPolicy, _typeMappings );
+    	if (this._nodes == null) {
+    		return new HelenaDAO<T>( clz, _hostname, _port, _serializationPolicy, _typeMappings );
+    	} else {
+    		return new HelenaDAO<T>( clz, _nodes, _serializationPolicy, _typeMappings );
+    	}
     }
-
-
-
 
 }

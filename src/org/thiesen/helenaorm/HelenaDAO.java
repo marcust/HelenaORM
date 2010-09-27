@@ -37,11 +37,13 @@ import java.util.Map.Entry;
 
 import me.prettyprint.cassandra.dao.Command;
 import me.prettyprint.cassandra.model.HectorException;
+import me.prettyprint.cassandra.service.CassandraClient;
 import me.prettyprint.cassandra.service.Keyspace;
 
 import org.apache.cassandra.thrift.Column;
 import org.apache.cassandra.thrift.ColumnParent;
 import org.apache.cassandra.thrift.ColumnPath;
+import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.cassandra.thrift.SlicePredicate;
 import org.apache.cassandra.thrift.SuperColumn;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -61,10 +63,13 @@ public class HelenaDAO<T> {
 
     private final String _hostname;
     private final int _port;
-    
+	private String[] _nodes = null;
+
     private final String _keyspace;
     private final String _columnFamily;
     
+	private ConsistencyLevel consistencyLevel = CassandraClient.DEFAULT_CONSISTENCY_LEVEL;
+
     private final PropertyDescriptor[] _propertyDescriptors;
     private final ImmutableList<byte[]> _columnNames;
     private final Class<T> _clz;
@@ -114,6 +119,13 @@ public class HelenaDAO<T> {
         if ( _keyField == null && _keyPropertyDescriptor == null ) {
             throw new HelenaRuntimeException("Could not find key of class " + clz.getName() + ", did you annotate with @KeyProperty" );
         }
+    }
+
+    HelenaDAO( final Class<T> clz, final String[] nodes, final SerializeUnknownClasses serializationPolicy,
+            final ImmutableMap<Class<?>, TypeMapping<?>> typeMappings ) {
+    	
+    	this(clz, null, 0, serializationPolicy, typeMappings);
+    	this._nodes = nodes;
     }
 
     private boolean isSuperColumnProperty( final PropertyDescriptor descriptor ) {
@@ -230,7 +242,13 @@ public class HelenaDAO<T> {
     }
 
     private <V> V execute(final Command<V> command) throws Exception {
-        return command.execute(_hostname, _port, _keyspace);
+    	if (_hostname != null) {
+    		return command.execute(_hostname, _port, _keyspace);
+    	} else if (_nodes != null) {
+    		return command.execute(_nodes, _keyspace, consistencyLevel);
+    	} else {
+    		throw new HelenaRuntimeException("One of these must be set: hostname and port or an array of nodes.");
+    	}
     }
 
     public T get(final String key) {
@@ -426,5 +444,13 @@ public class HelenaDAO<T> {
         predicate.setColumn_names( ImmutableList.copyOf( Iterables.transform( columns, _typeConverter.toByteArrayFunction() ) ) );
         return predicate;
     }
+
+	public ConsistencyLevel getConsistencyLevel() {
+		return consistencyLevel;
+	}
+
+	public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+		this.consistencyLevel = consistencyLevel;
+	}
 
 }
