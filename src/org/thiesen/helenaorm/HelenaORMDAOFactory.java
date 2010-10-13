@@ -110,4 +110,12 @@ public class HelenaORMDAOFactory {
     	}
     }
 
+	public <T> HelenaColumnDAO<T> makeColumnDaoForClass( final Class<T> clz ) {
+    	if (this._nodes == null) {
+    		return new HelenaColumnDAO<T>( clz, _hostname, _port, _serializationPolicy, _typeMappings );
+    	} else {
+    		return new HelenaColumnDAO<T>( clz, _nodes, _serializationPolicy, _typeMappings );
+    	}
+	}
+
 }
