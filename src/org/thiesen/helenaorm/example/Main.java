@@ -29,58 +29,24 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+import org.thiesen.helenaorm.HelenaColumnDAO;
 import org.thiesen.helenaorm.HelenaDAO;
 import org.thiesen.helenaorm.HelenaORMDAOFactory;
 import org.thiesen.helenaorm.SerializeUnknownClasses;
 
 import com.google.common.collect.ImmutableList;
 
-
 public class Main {
 
     public static void main( final String... args ) {
         simpleExample();
         superColumnExample();
-    }
-
-    private static void superColumnExample() {
-        final User admin = new User();
-        admin.setType( UserType.ADMINISTRATOR );
-        admin.setFirstname( "Emil" );
-        admin.setLastname("Admin");
-        admin.setUsername( "admin" );
-        
-        final User normalUser = new User();
-        normalUser.setType( UserType.USER );
-        normalUser.setFirstname( "Joe" );
-        normalUser.setLastname( "Example" );
-        normalUser.setUsername( "joex20" );
-        
-        
-        final User normalUseress = new User();
-        normalUseress.setType( UserType.USER );
-        normalUseress.setFirstname( "Jane" );
-        normalUseress.setLastname( "Example" );
-        normalUseress.setUsername( "jane73" );
-        
-        
-        final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
-                "localhost",
-                9160, 
-                SerializeUnknownClasses.NO );
-        
-        
-        final HelenaDAO<User> userDAO = factory.makeDaoForClass( User.class );
-        
-        userDAO.insert( admin );
-        userDAO.insert( normalUser );
-        userDAO.insert( normalUseress );
-        
-        System.out.println( userDAO.get( UserType.USER.toString(), ImmutableList.of( "jane73", "joex20" ) ) );
+        columnValueExample();
     }
 
     private static void simpleExample() {
-        final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
+
+    	final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
                 "localhost",
                 9160, 
                 SerializeUnknownClasses.YES );
@@ -107,6 +73,76 @@ public class Main {
         System.out.println( events );
         
         dao.delete( exampleEvent );
+    }
+ 
+    private static void superColumnExample() {
+        
+    	final User admin = new User();
+        admin.setType( UserType.ADMINISTRATOR );
+        admin.setFirstname( "Emil" );
+        admin.setLastname("Admin");
+        admin.setUsername( "admin" );
+        
+        final User normalUser = new User();
+        normalUser.setType( UserType.USER );
+        normalUser.setFirstname( "Joe" );
+        normalUser.setLastname( "Example" );
+        normalUser.setUsername( "joex20" );
+        
+        final User normalUseress = new User();
+        normalUseress.setType( UserType.USER );
+        normalUseress.setFirstname( "Jane" );
+        normalUseress.setLastname( "Example" );
+        normalUseress.setUsername( "jane73" );
+        
+        final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
+                "localhost",
+                9160, 
+                SerializeUnknownClasses.NO );
+        
+        final HelenaDAO<User> userDAO = factory.makeDaoForClass( User.class );
+        
+        userDAO.insert( admin );
+        userDAO.insert( normalUser );
+        userDAO.insert( normalUseress );
+        
+        System.out.println( userDAO.get( UserType.USER.toString(), ImmutableList.of( "jane73", "joex20" ) ) );
+    }
+
+    private static void columnValueExample() {
+
+    	final HelenaORMDAOFactory factory = HelenaORMDAOFactory.withConfig(
+                "localhost",
+                9160, 
+                SerializeUnknownClasses.YES );
+    	
+        final HelenaColumnDAO<Attendance> attDAO = factory.makeColumnDaoForClass( Attendance.class );
+        
+    	final String[] users = {"joex20", "jane73", "iso263"};
+    	
+    	for (String user : users) {
+    		for (int i = 1; i <= 3; i++) {
+    			
+            	Attendance att = new Attendance();
+            	att.setUser(user);
+            	att.setEvent(UUID.randomUUID().toString());
+            	att.setTime(System.currentTimeMillis());
+            	
+            	System.out.println("Inserting attendance: " + att);
+            	attDAO.insert(att);
+			}
+		}
+    	
+    	for (String user : users) {
+    		for (String event : attDAO.getColumns(user)) {
+    			System.out.println("User '" + user + "' attended to event '" + event + "'");
+    			
+            	Attendance att = new Attendance();
+            	att.setUser(user);
+            	att.setEvent(event);
+            	attDAO.delete(att);
+    		}
+    	}
     }
     
 }
